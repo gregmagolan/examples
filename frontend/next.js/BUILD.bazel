@@ -1,8 +1,9 @@
-load("@aspect_rules_js//js:defs.bzl", "js_library", "js_test")
+load("@aspect_rules_js//js:defs.bzl", "js_library", "js_test", "js_image_layer")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("@npm//next.js:next/package_json.bzl", next_bin = "bin")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
 load("//next.js:defs.bzl", "next")
 
 npm_link_all_packages(name = "node_modules")
@@ -79,4 +80,26 @@ build_test(
         # TODO: fix in Next.js (https://github.com/vercel/next.js/issues/43344) or find work-around.
         # ":next_export",
     ],
+)
+
+js_image_layer(
+    name = "layers",
+    binary = ":next_start",
+    root = "/app",
+)
+
+oci_image(
+    name = "image",
+    base = "@debian_node",
+    cmd = ["/app/next.js/next_start"],
+    entrypoint = ["/bin/bash"],
+    tars = [
+        ":layers",
+    ],
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repo_tags = ["examples_nextjs:latest"],
 )

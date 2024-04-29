@@ -9,6 +9,7 @@ bazel_dep(name = "aspect_rules_ts", version = "2.2.0")
 bazel_dep(name = "aspect_rules_rollup", version = "1.0.2")
 bazel_dep(name = "aspect_rules_webpack", version = "0.14.0")
 bazel_dep(name = "bazel_skylib", version = "1.5.0")
+bazel_dep(name = "rules_oci", version = "1.7.5")
 
 pnpm = use_extension("@aspect_rules_js//npm:extensions.bzl", "pnpm", dev_dependency = True)
 use_repo(pnpm, "pnpm")
@@ -34,3 +35,14 @@ rules_ts_ext = use_extension(
 )
 rules_ts_ext.deps()
 use_repo(rules_ts_ext, "npm_typescript")
+
+oci = use_extension("@rules_oci//oci:extensions.bzl", "oci")
+
+oci.pull(
+    name = "debian_node",
+    image = "node:20-slim",
+    platforms = [
+        "linux/amd64",
+    ],
+)
+use_repo(oci, "debian_node")
