@@ -82,16 +82,57 @@ build_test(
     ],
 )
 
+platform(
+    name = "linux_amd64",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:x86_64",
+    ],
+)
+
+platform(
+    name = "linux_arm64",
+    constraint_values = [
+        "@platforms//os:linux",
+        "@platforms//cpu:arm64",
+    ],
+)
+
+next_bin.next_binary(
+    name = "next_js_start",
+    fixed_args = ["start"],
+    chdir = package_name(),
+    data = [
+        "//next.js/pages",
+        "//next.js/public",
+        "//next.js/styles",
+        ":next",
+        "next.config.js",
+        "package.json",
+        ":node_modules/@bazel-example/one",
+        ":node_modules/is-even",
+        ":node_modules/next",
+        ":node_modules/react",
+        ":node_modules/react-dom",
+        ":node_modules/typescript",
+    ],
+)
+
 js_image_layer(
     name = "layers",
-    binary = ":next_start",
+    binary = ":next_js_start",
+    platform = select({
+        "@platforms//cpu:arm64": ":linux_arm64",
+        "@platforms//cpu:x86_64": ":linux_amd64",
+    }),
     root = "/app",
 )
 
 oci_image(
     name = "image",
     base = "@debian_node",
-    cmd = ["/app/next.js/next_start"],
+    cmd = ["/app/next.js/next_js_start"],
+    workdir = "/app/next.js/next_js_start.runfiles/_main",
     entrypoint = ["/bin/bash"],
     tars = [
         ":layers",
